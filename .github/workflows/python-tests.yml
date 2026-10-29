@@ -51,10 +51,7 @@ jobs:
         python-version:
           - '3.12'
         platform:
-          - linux-cpu
-          - macos-default
-          - windows-cpu
-          - windows-ffmpeg
+          # fork-only harness: measure the windows-arm64 lane alone
           - windows-arm64
         include:
           - platform: linux-cpu
