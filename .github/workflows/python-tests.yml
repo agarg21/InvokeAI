@@ -59,9 +59,12 @@ jobs:
             os: windows-11-arm
             uv-python: cpython-3.12-windows-aarch64-none
             github-env: $env:GITHUB_ENV
-            # Two workers for the same reason as windows-ffmpeg. The job also downloads the NVIDIA torch
-            # wheel and builds imageio-ffmpeg from its sdist (~18 min at four workers).
-            pytest-workers: '2'
+            # One worker per vCPU for the suite; the `ffmpeg` tests run afterwards on two workers, for the
+            # same reason as windows-ffmpeg. The job also downloads the NVIDIA torch wheel and builds
+            # imageio-ffmpeg from its sdist.
+            pytest-workers: logical
+            pytest-markers: 'not slow and not ffmpeg'
+            ffmpeg-workers: '2'
             # A per-test timeout turns a hang into a failure with a traceback, so pytest still reaches its summary
             # inside the job timeout.
             pytest-args: '--timeout=600'
@@ -182,6 +185,10 @@ jobs:
         # one worker per vCPU is the right level where the runner has the headroom for it. The
         # matrix carries the count, because windows-ffmpeg and windows-arm64 need a lower one.
         run: uv run --no-sync pytest -n ${{ matrix.pytest-workers }} --max-worker-restart=0 -m "${{ matrix.pytest-markers || 'not slow' }}" ${{ matrix.pytest-args }}
+
+      - name: run pytest (ffmpeg tests)
+        if: ${{ matrix.ffmpeg-workers && (steps.changed-files.outputs.python_any_changed == 'true' || inputs.always_run == true) }}
+        run: uv run --no-sync pytest -n ${{ matrix.ffmpeg-workers }} --max-worker-restart=0 -m "not slow and ffmpeg" ${{ matrix.pytest-args }}
 
   # Decides whether the external-database job runs. That job's service containers start before any of its
   # steps, so the decision has to come from a job of its own: otherwise every pull request, frontend-only ones
