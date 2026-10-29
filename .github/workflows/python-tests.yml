@@ -54,46 +54,7 @@ jobs:
           # fork-only harness: measure the windows-arm64 lane alone
           - windows-arm64
         include:
-          - platform: linux-cpu
-            os: blacksmith-4vcpu-ubuntu-2404
-            extra-index-url: 'https://download.pytorch.org/whl/cpu'
-            github-env: $GITHUB_ENV
-            pytest-workers: logical
-            timeout-minutes: 30
-          - platform: macos-default
-            os: blacksmith-6vcpu-macos-15
-            github-env: $GITHUB_ENV
-            pytest-workers: logical
-            timeout-minutes: 30
-          - platform: windows-cpu
-            os: blacksmith-8vcpu-windows-2025
-            github-env: $env:GITHUB_ENV
-            pytest-workers: logical
-            # This runner is Windows Server 2025 Core, which lacks the Video for Windows DLLs
-            # (AVICAP32, MSVFW32) every standard Windows ffmpeg build links against, so ffmpeg
-            # cannot start here. The `ffmpeg` tests run in windows-ffmpeg instead.
-            # Windows installs linux's dependency set, so a `platform_independent` test cannot fail differently
-            # here than on linux, which runs it. macOS runs a different torch without bitsandbytes and keeps them.
-            pytest-markers: 'not slow and not platform_independent and not ffmpeg'
-            prepare-server-core: true
-            # Job takes 10-15 min (runner prep ~3.5, pytest startup ~2, tests ~5-8); 30 leaves linux's and macOS's room.
-            timeout-minutes: 30
-          - platform: windows-ffmpeg
-            os: windows-2022
-            github-env: $env:GITHUB_ENV
-            # Half the vCPUs, not one worker each. The ffmpeg tests spawn decoders and encoders that
-            # bring their own threads, which the per-worker `OMP_NUM_THREADS=1` below does not cap,
-            # so a full-width run leaves this runner with no spare core and the deadline-sensitive
-            # tests miss their budgets non-deterministically. Two workers keep that headroom.
-            pytest-workers: '2'
-            pytest-markers: 'not slow and not platform_independent and ffmpeg'
-            # Roughly 1.5x the pytest step's two-worker wall time (~6 min), plus the job's ~1 min
-            # of checkout and install, plus margin.
-            timeout-minutes: 15
-          # Windows on ARM64 (NVIDIA RTX Spark). The lockfile's ARM64 fork is exercised nowhere else:
-          # torch 2.14.0+cu134 from NVIDIA's index (a 1.85 GB wheel, CPU-only on this runner), numpy 2,
-          # onnxruntime 1.31, sentencepiece 0.2.2 and the self-built opencv/blake3/tiktoken wheels. uv
-          # installs an x86_64 CPython on ARM64 Windows unless the request names the architecture.
+          # fork-only harness: other platforms' include entries removed (Blacksmith runners)
           - platform: windows-arm64
             os: windows-11-arm
             uv-python: cpython-3.12-windows-aarch64-none
